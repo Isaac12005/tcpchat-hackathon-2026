@@ -9,7 +9,7 @@
 
 #define MAX_MSG_LEN 1024
 
-void sendToAll(int clients[], int index, char buf[]){
+void sendToAll(int clients[], int clientsConnected, int index, char buf[]){
     char *t = strtok(buf, ":");
     t = strtok(NULL, ":");
     for(size_t i = 0; i < clientsConnected; i++){
@@ -20,8 +20,9 @@ void sendToAll(int clients[], int index, char buf[]){
 }
 
 int parseBuffer(int clients[], int index, char buf[], char names[][30]){
+    printf("Entering Parsing Logic\n");
     size_t i = 0;
-    char *loc = strcasestr(buf, "name:")
+    char *loc = strcasestr(buf, "name:");
     if(loc != NULL){
         loc += 5;
         while(*loc != '\0' && i < 29){
@@ -30,19 +31,19 @@ int parseBuffer(int clients[], int index, char buf[], char names[][30]){
         names[index][i] = '\0';
         return 1;
     }
-    *loc = strcasestr(buf, "msg:");
+    loc = strcasestr(buf, "msg:");
     if(loc != NULL){
         return 2;
     }
-    *loc = strcasestr(buf, "pmsg@");
+    loc = strcasestr(buf, "pmsg@");
     if(loc != NULL){
         return 3;
     }
-    *loc = strcasestr(buf, "list:");
+    loc = strcasestr(buf, "list:");
     if(loc != NULL){
         return 4;
     }
-    *loc = strcasestr(buf, "ai:");
+    loc = strcasestr(buf, "ai:");
     if(loc != NULL){
         return 5;
     } else {
@@ -52,7 +53,7 @@ int parseBuffer(int clients[], int index, char buf[], char names[][30]){
 }
 
 int main(int argc, char const* argv[]){
-    ssize_t msglen;
+    ssize_t msgLen;
     int inputSock, clientSock, active;
     int clients[100];
     int clientsConnected = 0;
@@ -121,16 +122,17 @@ int main(int argc, char const* argv[]){
         /* need to handle disconnected client sockets able to be reoccupied */
         for(size_t i = 0; i < (sizeof(clients)/sizeof(clients[0])); i++){
             if(clients[i] != 0 && fds[i+1].revents & POLLIN){
-                msglen = recv(clients[i], buf, sizeof(buf) - 1, 0);
-                if(msglen > 0){
+                msgLen = recv(clients[i], buf, sizeof(buf) - 1, 0);
+                if(msgLen > 0){
                     int parsed = parseBuffer(clients, i, buf, names);
                     switch (parsed){
                         case 1: 
                             printf("Client Name Updated\n");
                             break;
                         case 2: 
-                            sendToAll();
+                            sendToAll(clients, clientsConnected, i, buf);
                             break;
+                            /*
                         case 3:
                             privateMessage();
                             break;
@@ -140,17 +142,17 @@ int main(int argc, char const* argv[]){
                         case 5:
                             promptAI();
                             break;
+                            */
                         default:
                             send(clients[i], msgError, strlen(msgError),0);
 
                     }
-                } else if (msglen == 0) { 
+                } else if (msgLen == 0) { 
                     printf("Client %d Disconnected\n", i + 1);
                     close(clients[i]);
                     /* rm socket and fd(file descriptors for socket) */
                     clients[i]= 0;
                     fds[i+1].fd = -1;
-                    names[i] = {0};
                 } else {
                     perror("recv");
                 }

@@ -9,10 +9,11 @@
 #define MAX_MSG_LEN 1024
 
 int main(int argc, char const* argv[]){
+    ssize_t msgLen;
     int clientSock, active;
     struct sockaddr_in address;
     char buf[MAX_MSG_LEN] = {0};
-    struct pollfd fds[1];
+    struct pollfd fds[2];
 
     if((clientSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror("socket");
@@ -31,18 +32,31 @@ int main(int argc, char const* argv[]){
     } else {
         printf("Successfully Connected to Server\n");
     }
-        fds[0].fd = inputSock;
+        fds[0].fd = clientSock;
         fds[0].events = POLLIN;
-        int nfds = 1;
-        
+        int nfds = 2;
+        fds[1].fd = 0; /*stdin*/
+        fds[1].events = POLLIN;
+
     while(1){
         active = poll(fds, nfds, 100);
-        printf("Enter Message to send to server: \n");
-        if (fgets(buf, sizeof(buf), stdin) == NULL) {
-                break;
+        if(active > 0){
+            if(fds[1].revents & POLLIN){
+                if (fgets(buf, sizeof(buf), stdin) == NULL) {
+                        break;
+                }
+            buf[strcspn(buf, "\n")] = 0;
+            send(clientSock, buf, strlen(buf),0);
+            printf("Sent info\n");
+            }
+            if(fds[0].revents & POLLIN){
+                msgLen = recv(clientSock, buf, sizeof(buf) - 1, 0);
+                buf[msgLen] = '\0';
+                printf("%s\n", buf);
+            }
+        } else if(active < 0){
+            perror("poll");
         }
-        /* buf[strcspn(buf, "\n")] = 0; */
-        send(clientSock, buf, strlen(buf),0);
     }
     close(clientSock);
 }
