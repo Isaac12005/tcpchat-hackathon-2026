@@ -28,5 +28,6 @@ int main(int argc, char const* argv[]){
     } else {
         printf("Successfully Connected to Server\n");
     }
+    sleep(1);
     close(clientSock);
 }
