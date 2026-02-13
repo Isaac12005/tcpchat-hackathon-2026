@@ -5,22 +5,64 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <string.h>
 
 #define MAX_MSG_LEN 1024
 
 void sendToAll(int clients[], int index, char buf[]){
-    
+    char *t = strtok(buf, ":");
+    t = strtok(NULL, ":");
+    for(size_t i = 0; i < clientsConnected; i++){
+        if(clients[i] != 0 && i != index){
+            send(clients[i], t, strlen(t), 0);
+        }
+    }
+}
+
+int parseBuffer(int clients[], int index, char buf[], char names[][30]){
+    size_t i = 0;
+    char *loc = strcasestr(buf, "name:")
+    if(loc != NULL){
+        loc += 5;
+        while(*loc != '\0' && i < 29){
+            names[index][i++] = *loc++;
+        }
+        names[index][i] = '\0';
+        return 1;
+    }
+    *loc = strcasestr(buf, "msg:");
+    if(loc != NULL){
+        return 2;
+    }
+    *loc = strcasestr(buf, "pmsg@");
+    if(loc != NULL){
+        return 3;
+    }
+    *loc = strcasestr(buf, "list:");
+    if(loc != NULL){
+        return 4;
+    }
+    *loc = strcasestr(buf, "ai:");
+    if(loc != NULL){
+        return 5;
+    } else {
+        return 0;
+    }
+
 }
 
 int main(int argc, char const* argv[]){
     ssize_t msglen;
     int inputSock, clientSock, active;
-    int clients[10];
+    int clients[100];
     int clientsConnected = 0;
+    int parsed;
     struct sockaddr_in address;
     socklen_t socklen = sizeof(address);
     char buf[MAX_MSG_LEN] = {0};
-    struct pollfd fds[11];
+    char names[100][30] = {0};
+    char* msgError = "An Error Occurred, please try again.";
+    struct pollfd fds[101];
 
     if((inputSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror("socket");
@@ -39,7 +81,7 @@ int main(int argc, char const* argv[]){
         perror("inet_pton");
         return EXIT_FAILURE;
     }
-    /* INADDR_ANY will bind socket to any local interface. Replace inet_pton w/ below if desired. */
+    /* INADDR_ANY will bind socket to any local interface. Replace inet_pton if statement w/ below if desired. */
     /* address.sin_addr.s_addr = INADDR_ANY; */
 
     if((bind(inputSock, (struct sockaddr*)&address, sizeof(address))) < 0){
@@ -58,7 +100,7 @@ int main(int argc, char const* argv[]){
     int nfds = 1;
     while(1){
         active = poll(fds,nfds,100);
-        /* handle client connections */
+        /* need to hand reoccupying disconnected connections */
         if(clientsConnected < (sizeof(clients) / sizeof(clients[0]))){
             if(fds[0].revents & POLLIN){
                 /* refresh socklen or accept() starts getting weird */
@@ -76,19 +118,39 @@ int main(int argc, char const* argv[]){
             }
         }
         active = poll(fds,nfds,100);
-        /* handle client traffic and disconnects */
+        /* need to handle disconnected client sockets able to be reoccupied */
         for(size_t i = 0; i < (sizeof(clients)/sizeof(clients[0])); i++){
             if(clients[i] != 0 && fds[i+1].revents & POLLIN){
                 msglen = recv(clients[i], buf, sizeof(buf) - 1, 0);
                 if(msglen > 0){
-                    buf[msglen] = '\0';
-                    printf("MSG: %s\n", buf);
+                    int parsed = parseBuffer(clients, i, buf, names);
+                    switch (parsed){
+                        case 1: 
+                            printf("Client Name Updated\n");
+                            break;
+                        case 2: 
+                            sendToAll();
+                            break;
+                        case 3:
+                            privateMessage();
+                            break;
+                        case 4: 
+                            listAllClients();
+                            break;
+                        case 5:
+                            promptAI();
+                            break;
+                        default:
+                            send(clients[i], msgError, strlen(msgError),0);
+
+                    }
                 } else if (msglen == 0) { 
                     printf("Client %d Disconnected\n", i + 1);
                     close(clients[i]);
                     /* rm socket and fd(file descriptors for socket) */
                     clients[i]= 0;
                     fds[i+1].fd = -1;
+                    names[i] = {0};
                 } else {
                     perror("recv");
                 }
