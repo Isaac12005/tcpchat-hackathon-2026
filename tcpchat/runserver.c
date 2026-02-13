@@ -8,6 +8,10 @@
 
 #define MAX_MSG_LEN 1024
 
+void sendToAll(int clients[], int index, char buf[]){
+    
+}
+
 int main(int argc, char const* argv[]){
     ssize_t msglen;
     int inputSock, clientSock, active;
@@ -16,7 +20,7 @@ int main(int argc, char const* argv[]){
     struct sockaddr_in address;
     socklen_t socklen = sizeof(address);
     char buf[MAX_MSG_LEN] = {0};
-    struct pollfd fds[1024];
+    struct pollfd fds[11];
 
     if((inputSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror("socket");
@@ -51,27 +55,44 @@ int main(int argc, char const* argv[]){
     /* fds after inputsock bound */
     fds[0].fd = inputSock;
     fds[0].events = POLLIN;
-
+    int nfds = 1;
     while(1){
-        active = poll(fds,1,100);
-        if(fds[0].revents & POLLIN){
-            /* reinitializes socklen or else accept() starts getting weird */
-            socklen = sizeof(address);
-            if((clients[clientsConnected] = accept(inputSock, (struct sockaddr*)&address, &socklen)) < 0){
-                perror("accept");
-                continue;
-            } else {
-                printf("Client %d Connected\n", clientsConnected + 1);
-                clientsConnected++;
+        active = poll(fds,nfds,100);
+        /* handle client connections */
+        if(clientsConnected < (sizeof(clients) / sizeof(clients[0]))){
+            if(fds[0].revents & POLLIN){
+                /* refresh socklen or accept() starts getting weird */
+                socklen = sizeof(address);
+                if((clients[clientsConnected] = accept(inputSock, (struct sockaddr*)&address, &socklen)) < 0){
+                    perror("accept");
+                    continue;
+                } else {
+                    fds[clientsConnected+1].fd = clients[clientsConnected];
+                    fds[clientsConnected+1].events = POLLIN;
+                    printf("Client %d Connected\n", clientsConnected + 1);
+                    clientsConnected++;
+                    nfds = clientsConnected + 1;
+                }
             }
         }
+        active = poll(fds,nfds,100);
+        /* handle client traffic and disconnects */
         for(size_t i = 0; i < (sizeof(clients)/sizeof(clients[0])); i++){
-            if(clients[i] != 0){
-                int bytes_received = recv(clients[i], buf, sizeof(buf), 0);
-                if (bytes_received == 0) { 
+            if(clients[i] != 0 && fds[i+1].revents & POLLIN){
+                msglen = recv(clients[i], buf, sizeof(buf) - 1, 0);
+                if(msglen > 0){
+                    buf[msglen] = '\0';
+                    printf("MSG: %s\n", buf);
+                } else if (msglen == 0) { 
                     printf("Client %d Disconnected\n", i + 1);
                     close(clients[i]);
+                    /* rm socket and fd(file descriptors for socket) */
+                    clients[i]= 0;
+                    fds[i+1].fd = -1;
+                } else {
+                    perror("recv");
                 }
+
             }
         }
     }

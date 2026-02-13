@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <string.h>
 
 #define MAX_MSG_LEN 1024
 
@@ -28,6 +29,13 @@ int main(int argc, char const* argv[]){
     } else {
         printf("Successfully Connected to Server\n");
     }
-    sleep(1);
+    while(1){
+        printf("Enter Message to send to server: \n");
+        if (fgets(buf, sizeof(buf), stdin) == NULL) {
+                break;
+        }
+        buf[strcspn(buf, "\n")] = 0;
+        send(clientSock, buf, strlen(buf),0);
+    }
     close(clientSock);
 }
