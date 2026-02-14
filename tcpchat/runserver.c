@@ -37,12 +37,21 @@ void sendToAll(int clients[], int clientsConnected, int index, char buf[], char 
     char *name = names[index];
     t = strtok(NULL, ":");
     snprintf(message, sizeof(message), "%s: %s", name, t);
-    printf("sendToAll Debug: %s\n", message);
     for(size_t i = 0; i < clientsConnected; i++){
         if(clients[i] != 0 && i != index){
             send(clients[i], message, strlen(message), 0);
         }
     }
+}
+
+void listAllClients(int clients[], int index, int clientsConnected, char names[][30]){
+    char message[MAX_MSG_LEN] = "";
+    for(size_t i = 0; i < clientsConnected; i++){
+        strcat(message, names[i]);
+        strcat(message, "\n");
+    }
+    send(clients[index], message, strlen(message), 0);
+    return;
 }
 
 int parseBuffer(int clients[], int index, char buf[], char names[][30]){
@@ -168,10 +177,10 @@ int main(int argc, char const* argv[]){
                         case 3:
                             sendToPrivate(clients, clientsConnected, i, buf, names, msgError);
                             break;
-                            /*
                         case 4: 
-                            listAllClients();
+                            listAllClients(clients, i, clientsConnected, names);
                             break;
+                            /*
                         case 5:
                             sendHelp();
                             break;
