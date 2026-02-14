@@ -80,10 +80,6 @@ int parseBuffer(int clients[], int index, char buf[], char names[][30]){
     loc = strcasestr(buf, "help:");
     if(loc != NULL){
         return 5;
-    }
-    loc = strcasestr(buf, "ai:");
-    if(loc != NULL){
-        return 6;
     } else {
         return 0;
     }

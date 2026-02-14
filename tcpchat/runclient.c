@@ -57,6 +57,11 @@ int main(int argc, char const* argv[]){
             }
             if(fds[0].revents & POLLIN){
                 msgLen = recv(clientSock, buf, sizeof(buf) - 1, 0);
+                if(msgLen == 0){
+                    printf("Server Disconnected. Closing.\n");
+                    close(clientSock);
+                    break;
+                }
                 buf[msgLen] = '\0';
                 printf("%s\n", buf);
             }
