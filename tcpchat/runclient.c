@@ -19,7 +19,6 @@ int main(int argc, char const* argv[]){
         perror("socket");
         return 1;
     }
-
     address.sin_family = AF_INET;
     address.sin_port = htons(43501);
     if((inet_pton(address.sin_family, "127.0.0.1", &address.sin_addr)) != 1){
@@ -32,12 +31,20 @@ int main(int argc, char const* argv[]){
     } else {
         printf("Successfully Connected to Server\n");
     }
-        fds[0].fd = clientSock;
-        fds[0].events = POLLIN;
-        int nfds = 2;
-        fds[1].fd = 0; /*stdin*/
-        fds[1].events = POLLIN;
 
+    fds[0].fd = clientSock;
+    fds[0].events = POLLIN;
+    int nfds = 2;
+    fds[1].fd = 0; /*stdin*/
+    fds[1].events = POLLIN;
+
+    char message[1024];
+    printf("Enter Username:");
+    fgets(buf, sizeof(buf), stdin);
+    buf[strcspn(buf, "\n")] = '\0';
+    snprintf(message, sizeof(message), "name:%s", buf);
+    send(clientSock, message, strlen(message),0);
+    printf("---Entering Chatroom---\n\nUse \"help:\" for available commands\n");
     while(1){
         active = poll(fds, nfds, 100);
         if(active > 0){
@@ -47,7 +54,6 @@ int main(int argc, char const* argv[]){
                 }
             buf[strcspn(buf, "\n")] = 0;
             send(clientSock, buf, strlen(buf),0);
-            printf("Sent info\n");
             }
             if(fds[0].revents & POLLIN){
                 msgLen = recv(clientSock, buf, sizeof(buf) - 1, 0);
@@ -56,7 +62,9 @@ int main(int argc, char const* argv[]){
             }
         } else if(active < 0){
             perror("poll");
+            close(clientSock);
+            break;
         }
     }
-    close(clientSock);
+    return 0;
 }

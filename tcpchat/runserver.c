@@ -90,7 +90,6 @@ int parseBuffer(int clients[], int index, char buf[], char names[][30]){
 }
 
 
-
 int main(int argc, char const* argv[]){
     ssize_t msgLen;
     int inputSock, clientSock, active;
@@ -102,7 +101,7 @@ int main(int argc, char const* argv[]){
     char buf[MAX_MSG_LEN] = {0};
     char names[100][30] = {0};
     char* msgError = "An Error Occurred, please try again.";
-    char* msgHelp = "Commands:\n --msg: (Ex: msg:Hello, World!)\n--pmsg@name: (Ex: pmsg@Isaac:Hello, World!)\n--list: (Lists all users online)\n";
+    char* msgHelp = "Commands:\n--msg: (Ex: msg:Hello, World!)\n--pmsg@name: (Ex: pmsg@Isaac:Hello, World!)\n--list: (Lists all users online)\n";
     struct pollfd fds[101];
 
     if((inputSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -139,6 +138,8 @@ int main(int argc, char const* argv[]){
     fds[0].fd = inputSock;
     fds[0].events = POLLIN;
     int nfds = 1;
+
+    printf("Server Running...\n");
     while(1){
         active = poll(fds,nfds,100);
         /* need to hand reoccupying disconnected connections */
@@ -180,14 +181,11 @@ int main(int argc, char const* argv[]){
                         case 4: 
                             listAllClients(clients, i, clientsConnected, names);
                             break;
-                            /*
                         case 5:
-                            sendHelp();
+                            send(clients[i], msgHelp, strlen(msgHelp),0);
                             break;
-                            */
                         default:
                             send(clients[i], msgError, strlen(msgError),0);
-
                     }
                 } else if (msgLen == 0) { 
                     printf("Client %d Disconnected\n", i + 1);
