@@ -51,8 +51,10 @@ void sendToAll(int clients[], int clientsConnected, int index, char buf[], char 
 void listAllClients(int clients[], int index, int clientsConnected, char names[][30]){
     char message[MAX_MSG_LEN] = "";
     for(size_t i = 0; i < clientsConnected; i++){
-        strcat(message, names[i]);
-        strcat(message, "\n");
+        if(strcmp(names[i],"") !=0){
+            strcat(message, names[i]);
+            strcat(message, "\n");
+        }
     }
     send(clients[index], message, strlen(message), 0);
     return;
@@ -112,7 +114,7 @@ int main(int argc, char const* argv[]){
     char buf[MAX_MSG_LEN] = {0};
     char names[100][30] = {0};
     char* msgError = "An Error Occurred, please try again.";
-    char* msgHelp = "Commands:\n\"msg:\" (Ex: msg:Hello, World!)\n\"msgbold:\" (Ex: boldmsg:Hello,World!)\n\"pmsg@name:\" (Ex: pmsg@Isaac:Hello, World!)\n\"list:\" (Lists all users online)\n\"clear:\" (Clears Interface)\n\"exit:\" (ToExit)\n";
+    char* msgHelp = "Commands:\n\"msg:\" (Ex: msg:Hello, World!)\n\"msgbold:\" (Ex: boldmsg:Hello,World!)\n\"pmsg@name:\" (Ex: pmsg@Isaac:Hello, World!)\n\"list:\" (Lists all users online)\n\"clear:\" (Clears Interface)\n\"name:\" (Changes Nickname)\n\"exit:\" (Exit Program)\n";
     char* msgClear = "\033[H\033[J\e[1;94m████████╗ ██████╗██████╗        ██████╗██╗  ██╗ █████╗ ████████╗\n╚══██╔══╝██╔════╝██╔══██╗      ██╔════╝██║  ██║██╔══██╗╚══██╔══╝\n   ██║   ██║     ██████╔╝█████╗██║     ███████║███████║   ██║   \n   ██║   ██║     ██╔═══╝ ╚════╝██║     ██╔══██║██╔══██║   ██║   \n   ██║   ╚██████╗██║           ╚██████╗██║  ██║██║  ██║   ██║   \n   ╚═╝    ╚═════╝╚═╝            ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   \e[0m\n---Use \"help:\" for a list of commands---";
     struct pollfd fds[101];
 
@@ -134,7 +136,7 @@ int main(int argc, char const* argv[]){
         return EXIT_FAILURE;
     }
     /* INADDR_ANY will bind socket to any local interface. Replace inet_pton if statement w/ below if desired. */
-    /* address.sin_addr.s_addr = INADDR_ANY; */
+    /*   address.sin_addr.s_addr = INADDR_ANY; */
 
     if((bind(inputSock, (struct sockaddr*)&address, sizeof(address))) < 0){
         perror("bind");
@@ -215,6 +217,7 @@ int main(int argc, char const* argv[]){
                     /* rm socket and fd(file descriptors for socket) */
                     clients[i]= 0;
                     fds[i+1].fd = -1;
+                    names[i][0]= '\0';
                 } else {
                     perror("recv");
                 }

@@ -7,6 +7,7 @@
 #include <poll.h>
 
 #define MAX_MSG_LEN 1024
+#define SERVER_ADDRESS "127.0.0.1"
 
 int main(int argc, char const* argv[]){
     ssize_t msgLen;
@@ -21,7 +22,7 @@ int main(int argc, char const* argv[]){
     }
     address.sin_family = AF_INET;
     address.sin_port = htons(43501);
-    if((inet_pton(address.sin_family, "127.0.0.1", &address.sin_addr)) != 1){
+    if((inet_pton(address.sin_family, SERVER_ADDRESS, &address.sin_addr)) != 1){
         perror("inet_pton");
         return 1;
     }
