@@ -28,8 +28,6 @@ int main(int argc, char const* argv[]){
     if((connect(clientSock, (struct sockaddr*)&address, sizeof(address))) < 0){
         perror("connect");
         return 1;
-    } else {
-        printf("Successfully Connected to Server\n");
     }
 
     fds[0].fd = clientSock;
@@ -38,13 +36,15 @@ int main(int argc, char const* argv[]){
     fds[1].fd = 0; /*stdin*/
     fds[1].events = POLLIN;
 
-    char message[1024];
-    printf("Enter Username:");
+    char message[MAX_MSG_LEN];
+    printf("\nEnter Username:");
     fgets(buf, sizeof(buf), stdin);
     buf[strcspn(buf, "\n")] = '\0';
     snprintf(message, sizeof(message), "name:%s", buf);
     send(clientSock, message, strlen(message),0);
-    printf("---Entering Chatroom---\n\nUse \"help:\" for available commands\n");
+
+    printf("\033[H\033[J\e[1;94m████████╗ ██████╗██████╗        ██████╗██╗  ██╗ █████╗ ████████╗\n╚══██╔══╝██╔════╝██╔══██╗      ██╔════╝██║  ██║██╔══██╗╚══██╔══╝\n   ██║   ██║     ██████╔╝█████╗██║     ███████║███████║   ██║   \n   ██║   ██║     ██╔═══╝ ╚════╝██║     ██╔══██║██╔══██║   ██║   \n   ██║   ╚██████╗██║           ╚██████╗██║  ██║██║  ██║   ██║   \n   ╚═╝    ╚═════╝╚═╝            ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   \e[0m\n---Use \"help:\" for a list of commands---\n");
+
     while(1){
         active = poll(fds, nfds, 100);
         if(active > 0){
@@ -63,7 +63,7 @@ int main(int argc, char const* argv[]){
                     break;
                 }
                 buf[msgLen] = '\0';
-                printf("%s\n", buf);
+                printf("\r%s\n", buf);
             }
         } else if(active < 0){
             perror("poll");

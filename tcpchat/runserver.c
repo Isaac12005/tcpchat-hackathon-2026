@@ -20,7 +20,7 @@ void sendToPrivate(int clients[], int clientsConnected, int index, char buf[], c
     toName[len] = '\0';
     t = strtok(t, ":");
     t = strtok(NULL, ";");
-    snprintf(message, sizeof(message), "\033[31mPMSG From %s\033[0m: %s", names[index], t);
+    snprintf(message, sizeof(message), "\e[31mPMSG From %s\e[0m: %s", names[index], t);
     for(size_t i = 0; i < clientsConnected; i++){
         if(strcmp(names[i],toName) == 0){
             send(clients[i], message, strlen(message), 0);
@@ -31,12 +31,16 @@ void sendToPrivate(int clients[], int clientsConnected, int index, char buf[], c
     return;
 }
 
-void sendToAll(int clients[], int clientsConnected, int index, char buf[], char names[][30]){
+void sendToAll(int clients[], int clientsConnected, int index, char buf[], char names[][30], int bold){
     char message[MAX_MSG_LEN];
     char *t = strtok(buf, ":");
     char *name = names[index];
     t = strtok(NULL, ":");
-    snprintf(message, sizeof(message), "%s: %s", name, t);
+    if(bold == 0){
+        snprintf(message, sizeof(message), "%s: %s", name, t);
+    } else {
+        snprintf(message, sizeof(message), "\e[1;92m%s:%s\e[0m", name, t);
+    }
     for(size_t i = 0; i < clientsConnected; i++){
         if(clients[i] != 0 && i != index){
             send(clients[i], message, strlen(message), 0);
@@ -80,6 +84,18 @@ int parseBuffer(int clients[], int index, char buf[], char names[][30]){
     loc = strcasestr(buf, "help:");
     if(loc != NULL){
         return 5;
+    }
+    loc = strcasestr(buf, "exit:");
+    if(loc != NULL){
+        return 6;
+    }
+    loc = strcasestr(buf, "clear:");
+    if(loc != NULL){
+        return 7;
+    }
+    loc = strcasestr(buf, "msgbold:");
+    if(loc != NULL){
+        return 8;
     } else {
         return 0;
     }
@@ -88,16 +104,16 @@ int parseBuffer(int clients[], int index, char buf[], char names[][30]){
 
 int main(int argc, char const* argv[]){
     ssize_t msgLen;
-    int inputSock, clientSock, active;
+    int inputSock, clientSock, active, parsed;
     int clients[100];
     int clientsConnected = 0;
-    int parsed;
     struct sockaddr_in address;
     socklen_t socklen = sizeof(address);
     char buf[MAX_MSG_LEN] = {0};
     char names[100][30] = {0};
     char* msgError = "An Error Occurred, please try again.";
-    char* msgHelp = "Commands:\n--msg: (Ex: msg:Hello, World!)\n--pmsg@name: (Ex: pmsg@Isaac:Hello, World!)\n--list: (Lists all users online)\n";
+    char* msgHelp = "Commands:\n\"msg:\" (Ex: msg:Hello, World!)\n\"msgbold:\" (Ex: boldmsg:Hello,World!)\n\"pmsg@name:\" (Ex: pmsg@Isaac:Hello, World!)\n\"list:\" (Lists all users online)\n\"clear:\" (Clears Interface)\n\"exit:\" (ToExit)\n";
+    char* msgClear = "\033[H\033[J\e[1;94m████████╗ ██████╗██████╗        ██████╗██╗  ██╗ █████╗ ████████╗\n╚══██╔══╝██╔════╝██╔══██╗      ██╔════╝██║  ██║██╔══██╗╚══██╔══╝\n   ██║   ██║     ██████╔╝█████╗██║     ███████║███████║   ██║   \n   ██║   ██║     ██╔═══╝ ╚════╝██║     ██╔══██║██╔══██║   ██║   \n   ██║   ╚██████╗██║           ╚██████╗██║  ██║██║  ██║   ██║   \n   ╚═╝    ╚═════╝╚═╝            ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   \e[0m\n---Use \"help:\" for a list of commands---";
     struct pollfd fds[101];
 
     if((inputSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -149,6 +165,7 @@ int main(int argc, char const* argv[]){
                 } else {
                     fds[clientsConnected+1].fd = clients[clientsConnected];
                     fds[clientsConnected+1].events = POLLIN;
+
                     printf("Client %d Connected\n", clientsConnected + 1);
                     clientsConnected++;
                     nfds = clientsConnected + 1;
@@ -169,7 +186,7 @@ int main(int argc, char const* argv[]){
                             printf("Client Name Updated\n");
                             break;
                         case 2: 
-                            sendToAll(clients, clientsConnected, i, buf, names);
+                            sendToAll(clients, clientsConnected, i, buf, names, 0);
                             break;
                         case 3:
                             sendToPrivate(clients, clientsConnected, i, buf, names, msgError);
@@ -178,10 +195,19 @@ int main(int argc, char const* argv[]){
                             listAllClients(clients, i, clientsConnected, names);
                             break;
                         case 5:
-                            send(clients[i], msgHelp, strlen(msgHelp),0);
+                            send(clients[i], msgHelp, strlen(msgHelp), 0);
+                            break;
+                        case 6: 
+                            close(clients[i]);
+                            break;
+                        case 7: 
+                            send(clients[i], msgClear, strlen(msgClear), 0);
+                            break;
+                        case 8:
+                            sendToAll(clients, clientsConnected, i, buf, names, 1);
                             break;
                         default:
-                            send(clients[i], msgError, strlen(msgError),0);
+                            send(clients[i], msgError, strlen(msgError), 0);
                     }
                 } else if (msgLen == 0) { 
                     printf("Client %d Disconnected\n", i + 1);
