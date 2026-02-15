@@ -16,20 +16,23 @@ This program was tested on Windows with WSL Ubuntu, the default for WSL, with th
 
 ## Usage
 Once an instance of the server is running, multiple clients can connect to it and interact with each other using a series of commands:  
-*'msg:' Message to all other users.  
-*'pmsg@name:' Private message to a specific user.  
-*'msgbold:' A bold and colored version of msg.  
-*'list:' Lists all users online.  
-*'help:' Lists all available commands.  
-*'clear:' Clears all text in the terminal.  
-*'name:' Changes nickname (no spaces)  
-*'exit:' Leave server and close program.  
+| Command | Description |
+|-----:|-----------|
+|`msg:`|Message to all other users.|
+|`pmsg@name:`|Private Message to User|
+|`msgbold:`|A bold and colorful version of `msg:`|
+|`list:`|Lists all users online.|
+|`help:`|Lists all available commands|
+|`clear:`|Clears terminal|
+|`name:`|Changes nickname|
+|`exit:`|Leave Server and close program|
 
 ### Notes:
-Every command uses a ':' at the end of it.  
-Commands like 'msg:' and 'name:' take in characters after the colon as the argument.  
+Every command uses a `:` at the end of it.  
+Commands like `msg:` and `name:` take in characters after the colon as the argument.  
 Commands are not case sensitive.  
 
 # Disclaimer:
-This is a functional chat server. It can be exposed over the wider internet and it will function. That being said, I do not recommend anyone to use this as an actual IRC-style chat server over the internet, even if it technically can be. It sends plaintext traffic and was specifically written to only use glibc. It is not meant to be a modern internet communication service in it's current form.  
+This is a functional chat server. It can be exposed over the wider internet and it will function. That being said, I do not recommend anyone to use this as an actual IRC-style chat server over the internet, even if it technically can be.  
+It sends plaintext traffic and was specifically written to only use glibc. It is not meant to be a modern internet communication service in it's current form.    
 As such, the client and server files are configured by default to only function on localhost. This can be easily changed by reading the commend in runserver and changing your runclient file to whatever address you want to connect to.  
