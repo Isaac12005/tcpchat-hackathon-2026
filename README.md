@@ -3,8 +3,9 @@ TCP-CHAT is a lightweight tcp chat server and client written in C using only the
   
 It is meant to function similar to Internet Relay Chat (IRC) servers, and uses similar commands.  
   
-TCP-CHAT was written for the 2026 IU Indianapolis Computer Science Club Hackathon.  
+TCP-CHAT was written for the 2026 IU Indianapolis Computer Science Club Hackathon. 
 
+An example can be found here: https://www.youtube.com/watch?v=4MCgdPXsQhc  
 ## Installation
 If you are running a UNIX/POSIX system, the only requirement is a C compiler and glibc(the GNU C Compiler(gcc) should come with glibc by default).  
 
